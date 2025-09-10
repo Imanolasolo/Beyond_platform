@@ -58,6 +58,30 @@ def init_db():
     )
     """)
 
+    # Tabla de likes para videos
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS video_likes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        video_id INTEGER NOT NULL,
+        UNIQUE(user_id, video_id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (video_id) REFERENCES videos(id)
+    )
+    """)
+
+    # Tabla de likes para podcasts
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS podcast_likes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        podcast_id INTEGER NOT NULL,
+        UNIQUE(user_id, podcast_id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (podcast_id) REFERENCES podcasts(id)
+    )
+    """)
+
     # Crear un admin inicial si no existe
     cursor.execute("SELECT * FROM users WHERE username = ?", ("admin",))
     if not cursor.fetchone():

@@ -16,9 +16,10 @@ db_setup.init_db()
 # ===============================
 # Funciones de autenticación
 # ===============================
-def create_jwt(user_id, role):
+def create_jwt(user_id, role, username):
     payload = {
         "user_id": user_id,
+        "username": username,
         "role": role,
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2)
     }
@@ -62,11 +63,12 @@ def login_user(username, password):
 # ===============================
 st.set_page_config(page_title="Beyond - Dashboard", layout="wide" \
 "")
-col1, col2 = st.columns([1,8])
+col1, col2, col3 = st.columns([1,2,4])
 with col1:
     st.image("assets/images/logo_beyond.png",width=100,)
 with col2:
-    st.title("Beyond Platform")
+    st.title(":red[Beyond Platform]")
+with col3:
     st.subheader("Tu espacio para crecer, conectar e ir más allá.")
 # Guardar sesión en st.session_state
 if "token" not in st.session_state:
@@ -79,10 +81,10 @@ if st.session_state["token"] is None:
     with col1:
         st.image("assets/images/pic1.png",width=385)
         with st.expander("¿Qué es Beyond Platform?"):
-            st.write("Beyond Platform es tu espacio para aprender, conectar y transformar. No es solo una plataforma, es un ecosistema diseñado para docentes, administradores y estudiantes que buscan ir más allá de lo tradicional. Aquí encuentras contenidos exclusivos, herramientas tecnológicas y experiencias interactivas —como dashboards, podcasts, videos y eventos— que impulsan la innovación educativa y hacen más fácil tu día a día. Con Beyond Platform, la educación deja de ser estática y se convierte en un viaje de crecimiento continuo, adaptado a tus necesidades y con una comunidad que te acompaña en cada paso.")
+            st.write("Beyond Platform es tu espacio para aprender, conectar y transformar. No es solo una plataforma, es un ecosistema diseñado para docentes, administradores y estudiantes que buscan ir más allá de lo tradicional. Aquí encuentras contenidos exclusivos, herramientas tecnológicas y experiencias interactivas —como dashboards, podcasts, videos y eventos— que impulsan la innovación educativa y hacen más fácil tu día a día. Con :red[Beyond Platform], la educación deja de ser estática y se convierte en un viaje de crecimiento continuo, adaptado a tus necesidades y con una comunidad que te acompaña en cada paso.")
             
     with col2:
-        st.image("assets/images/login_image.png",width=385)
+        st.image("assets/images/login1_image.png",width=385)
         with st.expander("Inicia sesión"):
             st.subheader("🔐 Iniciar Sesión")
             username = st.text_input("Usuario")
@@ -91,7 +93,7 @@ if st.session_state["token"] is None:
             if st.button("Ingresar"):
                 user = login_user(username, password)
                 if user:
-                    token = create_jwt(user["id"], user["role"])
+                    token = create_jwt(user["id"], user["role"], user["username"])
                     st.session_state["token"] = token
                     st.success(f"Bienvenido {user['username']} 👋")
                     st.rerun()
@@ -101,12 +103,14 @@ if st.session_state["token"] is None:
         st.image("assets/images/mad_man.jpg",width=385)
         with st.expander("¿No tienes cuenta?"):
             st.write("Contacta al administrador para crear una cuenta.")
+            st.markdown('[Solicitar registro por WhatsApp](https://wa.me/+593993513082?text=Quiero%20registrarme%20en%20Beyond%20Platform)', unsafe_allow_html=True)
 
 else:
     # --- Dashboard ---
     payload = decode_jwt(st.session_state["token"])
     if payload:
-        st.success(f"✅ Sesión activa | Usuario ID: {payload['user_id']} | Rol: {payload['role']}")
+        usuario = payload.get('username', payload.get('user_id', ''))
+        st.success(f"✅ Bienvenido/a {usuario} ")
         
         if payload["role"] == "admin":
             from modules.dashboards.admin_dashboard import show_admin_dashboard

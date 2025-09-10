@@ -1,6 +1,8 @@
 import streamlit as st
 import sqlite3
 import os
+from db.likes import like_video, unlike_video, get_video_likes, user_liked_video
+import jwt
 
 DB_PATH = "beyond.db"
 
@@ -89,6 +91,14 @@ def admin_videos_crud():
             st.write("No hay videos guardados.")
         else:
             cols = st.columns(3)
+            # Obtener user_id del token si existe
+            user_id = None
+            if "token" in st.session_state and st.session_state["token"]:
+                try:
+                    payload = jwt.decode(st.session_state["token"], "super_secret_key", algorithms=["HS256"])
+                    user_id = payload.get("user_id")
+                except Exception:
+                    user_id = None
             for idx, vid in enumerate(videos):
                 vid_id, title, url, desc = vid
                 with cols[idx % 3]:
@@ -104,7 +114,20 @@ def admin_videos_crud():
                                 st.write("No se pudo cargar el video local.")
                         except Exception:
                             st.write("No se pudo cargar el video local.")
-                    
-                            
                     if desc:
                         st.caption(desc)
+                    # Mostrar likes y botón si hay usuario logueado
+                    if user_id:
+                        likes = get_video_likes(vid_id)
+                        liked = user_liked_video(user_id, vid_id)
+                        if liked:
+                            if st.button(f"❤️ Quitar me gusta ({likes})", key=f"unlike_video_{vid_id}"):
+                                unlike_video(user_id, vid_id)
+                                st.experimental_rerun()
+                        else:
+                            if st.button(f"🤍 Me gusta ({likes})", key=f"like_video_{vid_id}"):
+                                like_video(user_id, vid_id)
+                                st.experimental_rerun()
+                    else:
+                        likes = get_video_likes(vid_id)
+                        st.write(f"👍 {likes} me gusta")

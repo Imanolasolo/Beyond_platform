@@ -1,5 +1,7 @@
 import streamlit as st
 import sqlite3
+from db.likes import like_podcast, unlike_podcast, get_podcast_likes, user_liked_podcast
+import jwt
 
 DB_PATH = "beyond.db"
 
@@ -88,6 +90,14 @@ def admin_podcasts_crud():
             st.write("No hay videopodcasts guardados.")
         else:
             cols = st.columns(3)
+            # Obtener user_id del token si existe
+            user_id = None
+            if "token" in st.session_state and st.session_state["token"]:
+                try:
+                    payload = jwt.decode(st.session_state["token"], "super_secret_key", algorithms=["HS256"])
+                    user_id = payload.get("user_id")
+                except Exception:
+                    user_id = None
             for idx, pod in enumerate(podcasts):
                 pid, title, url, desc = pod
                 with cols[idx % 3]:
@@ -96,3 +106,18 @@ def admin_podcasts_crud():
                         st.video(url, format="video/mp4", start_time=0)
                     if desc:
                         st.caption(desc)
+                    # Mostrar likes y botón si hay usuario logueado
+                    if user_id:
+                        likes = get_podcast_likes(pid)
+                        liked = user_liked_podcast(user_id, pid)
+                        if liked:
+                            if st.button(f"❤️ Quitar me gusta ({likes})", key=f"unlike_podcast_{pid}"):
+                                unlike_podcast(user_id, pid)
+                                st.experimental_rerun()
+                        else:
+                            if st.button(f"🤍 Me gusta ({likes})", key=f"like_podcast_{pid}"):
+                                like_podcast(user_id, pid)
+                                st.experimental_rerun()
+                    else:
+                        likes = get_podcast_likes(pid)
+                        st.write(f"👍 {likes} me gusta")
